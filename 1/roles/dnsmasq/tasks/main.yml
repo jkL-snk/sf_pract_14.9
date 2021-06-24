@@ -1,0 +1,19 @@
+---
+- name: Install Dnsmasq
+  apt:
+    pkg: dnsmasq
+    state: present
+  
+- name: Set configuration file
+  template:
+    src: etc_dnsmasq.conf.j2
+    dest: /etc/dnsmasq.conf
+    validate: 'dnsmasq --test --conf-file=%s'
+  notify: restart dnsmasq
+
+- name: Make sure Dnsmasq is running
+  service:
+    name: dnsmasq
+    state: started
+    enabled: yes
+  
