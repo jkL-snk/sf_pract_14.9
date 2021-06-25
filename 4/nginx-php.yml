@@ -1,0 +1,54 @@
+---
+- name: Install Nginx and PHP-FPM
+  hosts: localhost
+  gather_facts: no
+  become: yes
+  vars:
+    http_host: "yc-ws.bakaneko.ru"
+    http_conf: "yc-ws.conf"
+    http_port: "80"
+
+  tasks:
+  - name: Install Nginx
+    apt: name=nginx update_cache=yes state=latest
+ 
+  - name: Start Nginx service
+    service: name=nginx state=started enabled=yes
+
+  - name: Install PHP-FPM
+    apt: name=php-fpm update_cache=yes state=latest
+
+  - name: Sets Nginx conf file 
+    template:
+      src: "files/nginx.conf.j2"
+      dest: "/etc/nginx/sites-available/{{ http_conf }}"
+ 
+  - name: Enables new site
+    file:
+      src: "/etc/nginx/sites-available/{{ http_conf }}"
+      dest: "/etc/nginx/sites-enabled/{{ http_conf }}"
+      state: link
+    notify: Reload Nginx
+
+  - name: Removes "default" site
+    file:
+      path: "/etc/nginx/sites-enabled/default"
+      state: absent
+    notify: Reload Nginx
+
+  - name: create /opt/nginx/ansible dir
+    file: 
+      path: "/opt/nginx/ansible"
+      state: directory
+
+  - name: Sets Up PHP Info Page
+    template:
+      src: "files/index.php.j2"
+      dest: "/opt/nginx/ansible/index.php"
+
+
+  handlers:
+  - name: Reload Nginx
+    service:
+      name: nginx
+      state: reloaded
